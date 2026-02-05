@@ -413,6 +413,7 @@
         <p>
             <strong>pyfpspack</strong> - Python port of FPSPACK focal mechanism library<br>
             <a href="https://github.com/comoglu/pyfpspack" target="_blank">GitHub</a> |
+            <a href="https://eq.comoglu.com/bb" target="_blank">Advanced Demo</a> |
             Based on Gasperini & Vannucci (2003)
         </p>
     </div>
@@ -528,23 +529,23 @@
             const d = dip * DTOR;
             const r = rake * DTOR;
 
-            // Normal vector to plane 1
+            // Normal vector to plane 1 (Aki-Richards: N, E, Down)
             const n1 = [
-                Math.sin(d) * Math.cos(s),
-                -Math.sin(d) * Math.sin(s),
-                Math.cos(d)
+                -Math.sin(d) * Math.sin(s),  // N
+                Math.sin(d) * Math.cos(s),   // E
+                Math.cos(d)                   // Down
             ];
 
             // Slip vector on plane 1
             const d1 = [
-                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),
-                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),
-                Math.sin(d) * Math.sin(r)
+                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),  // N
+                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),  // E
+                -Math.sin(d) * Math.sin(r)                                             // Down
             ];
 
             // For plane 2: n2 = d1, d2 = n1
             // Convert n2 (which is d1) to strike/dip
-            let n2 = d1;
+            let n2 = [...d1];
 
             // Ensure normal points downward (positive z)
             if (n2[2] < 0) {
@@ -552,24 +553,27 @@
             }
 
             // Strike2 from horizontal projection of normal
-            let strike2 = Math.atan2(-n2[1], n2[0]) / DTOR;
+            // For normal (n, e, d), dip direction is (n, e, 0) normalized
+            // Strike is 90° counterclockwise from dip direction
+            let strike2 = Math.atan2(n2[0], -n2[1]) / DTOR;
             if (strike2 < 0) strike2 += 360;
 
             // Dip2 from vertical component
-            const dip2 = Math.acos(Math.abs(n2[2])) / DTOR;
+            const horizLen = Math.sqrt(n2[0]*n2[0] + n2[1]*n2[1]);
+            const dip2 = Math.atan2(horizLen, n2[2]) / DTOR;
 
             // Rake2: angle of slip vector (n1) on plane 2
             // Strike direction of plane 2
-            const strikeDir2 = [Math.sin(strike2 * DTOR), Math.cos(strike2 * DTOR), 0];
-            // Dip direction of plane 2
+            const strikeDir2 = [Math.cos(strike2 * DTOR), Math.sin(strike2 * DTOR), 0];
+            // Down-dip direction of plane 2
             const dipDir2 = [
-                -Math.cos(dip2 * DTOR) * Math.cos(strike2 * DTOR),
-                Math.cos(dip2 * DTOR) * Math.sin(strike2 * DTOR),
-                -Math.sin(dip2 * DTOR)
+                -Math.cos(dip2 * DTOR) * Math.sin(strike2 * DTOR),
+                Math.cos(dip2 * DTOR) * Math.cos(strike2 * DTOR),
+                Math.sin(dip2 * DTOR)
             ];
 
-            // d2 = n1, project onto plane 2
-            let d2 = n1;
+            // d2 = n1 (with sign adjustment if needed)
+            let d2 = [...n1];
             if (d1[2] < 0) {
                 d2 = [-n1[0], -n1[1], -n1[2]];
             }
@@ -587,18 +591,19 @@
             const d = dip * DTOR;
             const r = rake * DTOR;
 
-            // Normal vector (Aki-Richards: x=N, y=E, z=Down)
+            // Normal vector to fault plane (Aki-Richards: N, E, Down)
+            // Points into footwall, downward component positive
             const n = [
-                Math.sin(d) * Math.cos(s),
-                -Math.sin(d) * Math.sin(s),
-                Math.cos(d)
+                -Math.sin(d) * Math.sin(s),  // N
+                Math.sin(d) * Math.cos(s),   // E
+                Math.cos(d)                   // Down
             ];
 
-            // Slip vector
+            // Slip vector (direction of hanging wall motion)
             const sl = [
-                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),
-                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),
-                Math.sin(d) * Math.sin(r)
+                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),  // N
+                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),  // E
+                -Math.sin(d) * Math.sin(r)                                             // Down
             ];
 
             // P axis = (n - d) / sqrt(2)
@@ -687,16 +692,18 @@
             const d = state.dip * DTOR;
             const r = state.rake * DTOR;
 
-            // Normal and slip vectors
+            // Normal vector to fault plane (Aki-Richards: N, E, Down)
+            // Points into footwall, downward component positive
             const n = [
-                Math.sin(d) * Math.cos(s),
-                -Math.sin(d) * Math.sin(s),
-                Math.cos(d)
+                -Math.sin(d) * Math.sin(s),  // N
+                Math.sin(d) * Math.cos(s),   // E
+                Math.cos(d)                   // Down
             ];
+            // Slip vector (direction of hanging wall motion)
             const sl = [
-                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),
-                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),
-                Math.sin(d) * Math.sin(r)
+                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),  // N
+                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),  // E
+                -Math.sin(d) * Math.sin(r)                                             // Down
             ];
 
             // Grid-based rendering
@@ -792,9 +799,24 @@
             const s = strike * DTOR;
             const d = dip * DTOR;
 
-            // Strike direction and dip direction in Aki-Richards
-            const strikeDir = [Math.sin(s), Math.cos(s), 0];
-            const dipDir = [-Math.cos(d) * Math.cos(s), Math.cos(d) * Math.sin(s), -Math.sin(d)];
+            // Normal vector to the fault plane (same formula as radiation pattern)
+            // In Aki-Richards (N, E, Down) - points into footwall
+            const n = [
+                -Math.sin(d) * Math.sin(s),  // N
+                Math.sin(d) * Math.cos(s),   // E
+                Math.cos(d)                   // Down
+            ];
+
+            // Two orthogonal vectors in the fault plane
+            // Strike direction: horizontal, along strike azimuth (N, E, Down)
+            const strikeDir = [Math.cos(s), Math.sin(s), 0];
+            // Up-dip direction: perpendicular to strike, tilted up by (90-dip) from horizontal
+            // upDip = n × strikeDir (cross product)
+            const upDipDir = [
+                n[1] * strikeDir[2] - n[2] * strikeDir[1],
+                n[2] * strikeDir[0] - n[0] * strikeDir[2],
+                n[0] * strikeDir[1] - n[1] * strikeDir[0]
+            ];
 
             ctx.beginPath();
             ctx.strokeStyle = color;
@@ -805,21 +827,21 @@
             let started = false;
             for (let i = 0; i <= 180; i++) {
                 const angle = i * DTOR * 2;
-                // Point on the plane
+                // Point on the plane (parameterized by angle around the great circle)
                 const pt = [
-                    strikeDir[0] * Math.cos(angle) + dipDir[0] * Math.sin(angle),
-                    strikeDir[1] * Math.cos(angle) + dipDir[1] * Math.sin(angle),
-                    strikeDir[2] * Math.cos(angle) + dipDir[2] * Math.sin(angle)
+                    strikeDir[0] * Math.cos(angle) + upDipDir[0] * Math.sin(angle),
+                    strikeDir[1] * Math.cos(angle) + upDipDir[1] * Math.sin(angle),
+                    strikeDir[2] * Math.cos(angle) + upDipDir[2] * Math.sin(angle)
                 ];
 
-                // Only plot lower hemisphere (z > 0)
+                // Only plot lower hemisphere (z > 0 means pointing down)
                 if (pt[2] < 0) {
                     started = false;
                     continue;
                 }
 
-                // Equal-area projection
-                const theta = Math.acos(pt[2]);
+                // Equal-area (Lambert) projection
+                const theta = Math.acos(Math.min(1, Math.max(-1, pt[2])));
                 const phi = Math.atan2(pt[1], pt[0]);
                 const rho = Math.sqrt(2) * Math.sin(theta / 2);
                 const px = cx + rho * Math.sin(phi) * radius;
