@@ -530,13 +530,15 @@
             const r = rake * DTOR;
 
             // Normal vector to plane 1 (Aki-Richards: N, E, Down)
+            // From pyfpspack pl2nd
             const n1 = [
                 -Math.sin(d) * Math.sin(s),  // N
                 Math.sin(d) * Math.cos(s),   // E
-                Math.cos(d)                   // Down
+                -Math.cos(d)                  // Down (negative!)
             ];
 
             // Slip vector on plane 1
+            // From pyfpspack pl2nd
             const d1 = [
                 Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),  // N
                 Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),  // E
@@ -592,14 +594,15 @@
             const r = rake * DTOR;
 
             // Normal vector to fault plane (Aki-Richards: N, E, Down)
-            // Points into footwall, downward component positive
+            // From pyfpspack pl2nd - outward normal
             const n = [
                 -Math.sin(d) * Math.sin(s),  // N
                 Math.sin(d) * Math.cos(s),   // E
-                Math.cos(d)                   // Down
+                -Math.cos(d)                  // Down (negative!)
             ];
 
             // Slip vector (direction of hanging wall motion)
+            // From pyfpspack pl2nd
             const sl = [
                 Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),  // N
                 Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),  // E
@@ -693,13 +696,14 @@
             const r = state.rake * DTOR;
 
             // Normal vector to fault plane (Aki-Richards: N, E, Down)
-            // Points into footwall, downward component positive
+            // From pyfpspack pl2nd - outward normal
             const n = [
                 -Math.sin(d) * Math.sin(s),  // N
                 Math.sin(d) * Math.cos(s),   // E
-                Math.cos(d)                   // Down
+                -Math.cos(d)                  // Down (negative!)
             ];
             // Slip vector (direction of hanging wall motion)
+            // From pyfpspack pl2nd
             const sl = [
                 Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),  // N
                 Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),  // E
@@ -800,11 +804,11 @@
             const d = dip * DTOR;
 
             // Normal vector to the fault plane (same formula as radiation pattern)
-            // In Aki-Richards (N, E, Down) - points into footwall
+            // From pyfpspack pl2nd - outward normal
             const n = [
                 -Math.sin(d) * Math.sin(s),  // N
                 Math.sin(d) * Math.cos(s),   // E
-                Math.cos(d)                   // Down
+                -Math.cos(d)                  // Down (negative!)
             ];
 
             // Two orthogonal vectors in the fault plane
