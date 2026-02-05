@@ -76,6 +76,18 @@ print(f"Scalar moment M0: {decomp.am0:.4f}")
 print(f"CLVD component eta: {decomp.eta:.4f}")
 ```
 
+## Web Demo
+
+Try pyfpspack in your browser! Open `demo/index.html` for an interactive focal mechanism visualization:
+
+- Strike/Dip/Rake sliders with preset fault types
+- Real-time beachball rendering with equal-area projection
+- P/T/B axes display
+- Auxiliary plane calculation
+- Moment tensor output
+
+No installation required - just open the HTML file in any modern browser.
+
 ## GUI Application
 
 Launch the interactive focal mechanism toolbox:

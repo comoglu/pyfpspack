@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the original paper."
+title: "pyfpspack: Python port of FPSPACK focal mechanism library"
+type: software
+authors:
+  - family-names: "Comoglu"
+    given-names: "Mustafa"
+repository-code: "https://github.com/comoglu/pyfpspack"
+license: MIT
+version: "1.0.0"
+date-released: "2026-02-05"
+keywords:
+  - seismology
+  - earthquake
+  - focal mechanism
+  - moment tensor
+  - beachball
+  - geophysics
+references:
+  - type: article
+    authors:
+      - family-names: "Gasperini"
+        given-names: "P."
+      - family-names: "Vannucci"
+        given-names: "G."
+    title: "FPSPACK: a package of FORTRAN subroutines to manage earthquake focal mechanism data"
+    journal: "Computers & Geosciences"
+    volume: 29
+    issue: 7
+    start: 893
+    end: 901
+    year: 2003
+    doi: "10.1016/S0098-3004(03)00096-7"

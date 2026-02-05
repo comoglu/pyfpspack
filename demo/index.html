@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pyfpspack - Interactive Focal Mechanism Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--bg);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Input Controls */
+        .control-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .control-value {
+            font-family: 'SF Mono', Monaco, monospace;
+            background: var(--bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Preset Buttons */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .preset-btn {
+            padding: 0.5rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 0.75rem;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .preset-btn.active {
+            border-color: var(--primary);
+            background: #dbeafe;
+        }
+
+        /* Beachball Canvas */
+        .beachball-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+        }
+
+        #beachball {
+            max-width: 100%;
+        }
+
+        /* Results */
+        .results-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .result-section {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .result-section h4 {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 0.25rem 0;
+        }
+
+        .result-row span:first-child {
+            color: var(--text-muted);
+        }
+
+        .result-row span:last-child {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-weight: 500;
+        }
+
+        .tensor-display {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.75rem;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 6px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        /* Axes Legend */
+        .axes-legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-top: 0.75rem;
+        }
+
+        .axis-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .axis-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .axis-p { background: #ef4444; }
+        .axis-t { background: #3b82f6; }
+        .axis-b { background: #22c55e; }
+
+        /* Info Section */
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info-box strong {
+            color: var(--primary-dark);
+        }
+
+        /* Fault Type Badge */
+        .fault-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-normal { background: #dbeafe; color: #1e40af; }
+        .badge-reverse { background: #fee2e2; color: #991b1b; }
+        .badge-strike { background: #fef3c7; color: #92400e; }
+        .badge-oblique { background: #e0e7ff; color: #3730a3; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>pyfpspack</h1>
+        <p>Interactive Focal Mechanism Visualization</p>
+    </div>
+
+    <div class="container">
+        <!-- Left Panel: Controls -->
+        <div class="card">
+            <div class="card-header">Input Parameters</div>
+            <div class="card-body">
+                <!-- Presets -->
+                <div class="preset-grid">
+                    <button class="preset-btn" onclick="setPreset(0, 45, -90)">Normal</button>
+                    <button class="preset-btn" onclick="setPreset(0, 45, 90)">Reverse</button>
+                    <button class="preset-btn" onclick="setPreset(0, 90, 0)">Left-Lateral</button>
+                    <button class="preset-btn" onclick="setPreset(0, 90, 180)">Right-Lateral</button>
+                    <button class="preset-btn" onclick="setPreset(45, 60, -120)">Oblique Normal</button>
+                    <button class="preset-btn" onclick="setPreset(135, 30, 60)">Oblique Reverse</button>
+                </div>
+
+                <!-- Strike -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Strike</span>
+                        <span class="control-value" id="strike-value">0.0°</span>
+                    </div>
+                    <input type="range" id="strike" min="0" max="360" step="1" value="0">
+                </div>
+
+                <!-- Dip -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Dip</span>
+                        <span class="control-value" id="dip-value">45.0°</span>
+                    </div>
+                    <input type="range" id="dip" min="0" max="90" step="1" value="45">
+                </div>
+
+                <!-- Rake -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Rake</span>
+                        <span class="control-value" id="rake-value">-90.0°</span>
+                    </div>
+                    <input type="range" id="rake" min="-180" max="180" step="1" value="-90">
+                </div>
+
+                <div class="info-box">
+                    <strong>Aki-Richards Convention</strong><br>
+                    x = North, y = East, z = Down<br><br>
+                    <strong>Beachball</strong><br>
+                    Dark = Compressional quadrant<br>
+                    Light = Dilatational quadrant
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Visualization & Results -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Beachball -->
+            <div class="card">
+                <div class="card-header">
+                    <span id="fault-type-badge" class="fault-badge badge-normal">Normal Fault</span>
+                    Focal Mechanism
+                </div>
+                <div class="beachball-container">
+                    <canvas id="beachball" width="350" height="350"></canvas>
+                </div>
+                <div class="axes-legend">
+                    <div class="axis-item"><div class="axis-dot axis-p"></div> P (Pressure)</div>
+                    <div class="axis-item"><div class="axis-dot axis-t"></div> T (Tension)</div>
+                    <div class="axis-item"><div class="axis-dot axis-b"></div> B (Null)</div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="card">
+                <div class="card-header">Computed Parameters</div>
+                <div class="card-body results-grid">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <!-- Nodal Planes -->
+                        <div class="result-section">
+                            <h4>Nodal Plane A</h4>
+                            <div class="result-row"><span>Strike:</span> <span id="np1-strike">0.0°</span></div>
+                            <div class="result-row"><span>Dip:</span> <span id="np1-dip">45.0°</span></div>
+                            <div class="result-row"><span>Rake:</span> <span id="np1-rake">-90.0°</span></div>
+                        </div>
+                        <div class="result-section">
+                            <h4>Nodal Plane B (Auxiliary)</h4>
+                            <div class="result-row"><span>Strike:</span> <span id="np2-strike">--</span></div>
+                            <div class="result-row"><span>Dip:</span> <span id="np2-dip">--</span></div>
+                            <div class="result-row"><span>Rake:</span> <span id="np2-rake">--</span></div>
+                        </div>
+
+                        <!-- P/T/B Axes -->
+                        <div class="result-section">
+                            <h4>P Axis (Pressure)</h4>
+                            <div class="result-row"><span>Trend:</span> <span id="p-trend">--</span></div>
+                            <div class="result-row"><span>Plunge:</span> <span id="p-plunge">--</span></div>
+                        </div>
+                        <div class="result-section">
+                            <h4>T Axis (Tension)</h4>
+                            <div class="result-row"><span>Trend:</span> <span id="t-trend">--</span></div>
+                            <div class="result-row"><span>Plunge:</span> <span id="t-plunge">--</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Moment Tensor -->
+                    <div class="result-section">
+                        <h4>Moment Tensor (Aki-Richards)</h4>
+                        <div class="tensor-display" id="tensor-display">
+[  0.000   0.000   0.000 ]
+[  0.000   0.000   0.000 ]
+[  0.000   0.000   0.000 ]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>
+            <strong>pyfpspack</strong> - Python port of FPSPACK focal mechanism library<br>
+            <a href="https://github.com/comoglu/pyfpspack" target="_blank">GitHub</a> |
+            Based on Gasperini & Vannucci (2003)
+        </p>
+    </div>
+
+    <script>
+        // Constants
+        const DTOR = Math.PI / 180;
+
+        // Get elements
+        const strikeSlider = document.getElementById('strike');
+        const dipSlider = document.getElementById('dip');
+        const rakeSlider = document.getElementById('rake');
+        const canvas = document.getElementById('beachball');
+        const ctx = canvas.getContext('2d');
+
+        // State
+        let state = { strike: 0, dip: 45, rake: -90 };
+
+        // Initialize
+        function init() {
+            strikeSlider.addEventListener('input', () => {
+                state.strike = parseFloat(strikeSlider.value);
+                update();
+            });
+            dipSlider.addEventListener('input', () => {
+                state.dip = parseFloat(dipSlider.value);
+                update();
+            });
+            rakeSlider.addEventListener('input', () => {
+                state.rake = parseFloat(rakeSlider.value);
+                update();
+            });
+
+            update();
+        }
+
+        function setPreset(strike, dip, rake) {
+            state.strike = strike;
+            state.dip = dip;
+            state.rake = rake;
+            strikeSlider.value = strike;
+            dipSlider.value = dip;
+            rakeSlider.value = rake;
+            update();
+        }
+
+        function update() {
+            // Update value displays
+            document.getElementById('strike-value').textContent = state.strike.toFixed(1) + '°';
+            document.getElementById('dip-value').textContent = state.dip.toFixed(1) + '°';
+            document.getElementById('rake-value').textContent = state.rake.toFixed(1) + '°';
+
+            // Calculate auxiliary plane
+            const aux = calculateAuxiliaryPlane(state.strike, state.dip, state.rake);
+
+            // Calculate P/T axes
+            const axes = calculatePTAxes(state.strike, state.dip, state.rake);
+
+            // Calculate moment tensor
+            const mt = calculateMomentTensor(state.strike, state.dip, state.rake);
+
+            // Update nodal planes
+            document.getElementById('np1-strike').textContent = state.strike.toFixed(1) + '°';
+            document.getElementById('np1-dip').textContent = state.dip.toFixed(1) + '°';
+            document.getElementById('np1-rake').textContent = state.rake.toFixed(1) + '°';
+
+            document.getElementById('np2-strike').textContent = aux.strike.toFixed(1) + '°';
+            document.getElementById('np2-dip').textContent = aux.dip.toFixed(1) + '°';
+            document.getElementById('np2-rake').textContent = aux.rake.toFixed(1) + '°';
+
+            // Update P/T axes
+            document.getElementById('p-trend').textContent = axes.pTrend.toFixed(1) + '°';
+            document.getElementById('p-plunge').textContent = axes.pPlunge.toFixed(1) + '°';
+            document.getElementById('t-trend').textContent = axes.tTrend.toFixed(1) + '°';
+            document.getElementById('t-plunge').textContent = axes.tPlunge.toFixed(1) + '°';
+
+            // Update tensor display
+            document.getElementById('tensor-display').textContent = formatTensor(mt);
+
+            // Update fault type badge
+            updateFaultTypeBadge();
+
+            // Draw beachball
+            drawBeachball(axes);
+        }
+
+        function classifyFaultType(rake) {
+            const absRake = Math.abs(rake);
+            if (absRake <= 22.5 || absRake >= 157.5) {
+                return absRake >= 157.5 ? 'Right-Lateral Strike-Slip' : 'Left-Lateral Strike-Slip';
+            } else if (absRake >= 67.5 && absRake <= 112.5) {
+                return rake > 0 ? 'Reverse Fault' : 'Normal Fault';
+            } else {
+                return rake > 0 ? 'Oblique Reverse' : 'Oblique Normal';
+            }
+        }
+
+        function updateFaultTypeBadge() {
+            const badge = document.getElementById('fault-type-badge');
+            const type = classifyFaultType(state.rake);
+            badge.textContent = type;
+
+            badge.className = 'fault-badge';
+            if (type.includes('Normal')) badge.classList.add('badge-normal');
+            else if (type.includes('Reverse')) badge.classList.add('badge-reverse');
+            else if (type.includes('Strike')) badge.classList.add('badge-strike');
+            else badge.classList.add('badge-oblique');
+        }
+
+        // Calculate auxiliary (conjugate) nodal plane
+        function calculateAuxiliaryPlane(strike, dip, rake) {
+            const s = strike * DTOR;
+            const d = dip * DTOR;
+            const r = rake * DTOR;
+
+            // Normal vector to plane 1
+            const n1 = [
+                Math.sin(d) * Math.cos(s),
+                -Math.sin(d) * Math.sin(s),
+                Math.cos(d)
+            ];
+
+            // Slip vector on plane 1
+            const d1 = [
+                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),
+                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),
+                Math.sin(d) * Math.sin(r)
+            ];
+
+            // For plane 2: n2 = d1, d2 = n1
+            // Convert n2 (which is d1) to strike/dip
+            let n2 = d1;
+
+            // Ensure normal points downward (positive z)
+            if (n2[2] < 0) {
+                n2 = [-n2[0], -n2[1], -n2[2]];
+            }
+
+            // Strike2 from horizontal projection of normal
+            let strike2 = Math.atan2(-n2[1], n2[0]) / DTOR;
+            if (strike2 < 0) strike2 += 360;
+
+            // Dip2 from vertical component
+            const dip2 = Math.acos(Math.abs(n2[2])) / DTOR;
+
+            // Rake2: angle of slip vector (n1) on plane 2
+            // Strike direction of plane 2
+            const strikeDir2 = [Math.sin(strike2 * DTOR), Math.cos(strike2 * DTOR), 0];
+            // Dip direction of plane 2
+            const dipDir2 = [
+                -Math.cos(dip2 * DTOR) * Math.cos(strike2 * DTOR),
+                Math.cos(dip2 * DTOR) * Math.sin(strike2 * DTOR),
+                -Math.sin(dip2 * DTOR)
+            ];
+
+            // d2 = n1, project onto plane 2
+            let d2 = n1;
+            if (d1[2] < 0) {
+                d2 = [-n1[0], -n1[1], -n1[2]];
+            }
+
+            const strikeComp = d2[0] * strikeDir2[0] + d2[1] * strikeDir2[1] + d2[2] * strikeDir2[2];
+            const dipComp = d2[0] * dipDir2[0] + d2[1] * dipDir2[1] + d2[2] * dipDir2[2];
+            let rake2 = Math.atan2(dipComp, strikeComp) / DTOR;
+
+            return { strike: strike2, dip: dip2, rake: rake2 };
+        }
+
+        // Calculate P/T/B axes
+        function calculatePTAxes(strike, dip, rake) {
+            const s = strike * DTOR;
+            const d = dip * DTOR;
+            const r = rake * DTOR;
+
+            // Normal vector (Aki-Richards: x=N, y=E, z=Down)
+            const n = [
+                Math.sin(d) * Math.cos(s),
+                -Math.sin(d) * Math.sin(s),
+                Math.cos(d)
+            ];
+
+            // Slip vector
+            const sl = [
+                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),
+                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),
+                Math.sin(d) * Math.sin(r)
+            ];
+
+            // P axis = (n - d) / sqrt(2)
+            const p = [(n[0] - sl[0]) / Math.sqrt(2), (n[1] - sl[1]) / Math.sqrt(2), (n[2] - sl[2]) / Math.sqrt(2)];
+            // T axis = (n + d) / sqrt(2)
+            const t = [(n[0] + sl[0]) / Math.sqrt(2), (n[1] + sl[1]) / Math.sqrt(2), (n[2] + sl[2]) / Math.sqrt(2)];
+            // B axis = n x d
+            const b = [
+                n[1] * sl[2] - n[2] * sl[1],
+                n[2] * sl[0] - n[0] * sl[2],
+                n[0] * sl[1] - n[1] * sl[0]
+            ];
+
+            // Convert to trend/plunge (ensure downward)
+            function toTrendPlunge(v) {
+                let vec = [...v];
+                if (vec[2] < 0) vec = [-vec[0], -vec[1], -vec[2]];
+
+                const plunge = Math.asin(vec[2]) / DTOR;
+                let trend = Math.atan2(vec[1], vec[0]) / DTOR;
+                if (trend < 0) trend += 360;
+
+                return { trend, plunge };
+            }
+
+            const pAxis = toTrendPlunge(p);
+            const tAxis = toTrendPlunge(t);
+            const bAxis = toTrendPlunge(b);
+
+            return {
+                pTrend: pAxis.trend, pPlunge: pAxis.plunge,
+                tTrend: tAxis.trend, tPlunge: tAxis.plunge,
+                bTrend: bAxis.trend, bPlunge: bAxis.plunge,
+                p, t, b
+            };
+        }
+
+        // Calculate moment tensor (Aki-Richards convention)
+        function calculateMomentTensor(strike, dip, rake) {
+            const s = strike * DTOR;
+            const d = dip * DTOR;
+            const r = rake * DTOR;
+
+            const sin2s = Math.sin(2 * s);
+            const cos2s = Math.cos(2 * s);
+            const sind = Math.sin(d);
+            const cosd = Math.cos(d);
+            const sin2d = Math.sin(2 * d);
+            const cos2d = Math.cos(2 * d);
+            const sinr = Math.sin(r);
+            const cosr = Math.cos(r);
+
+            // Aki-Richards moment tensor components (M0 = 1)
+            const Mxx = -(sind * cosr * sin2s + sin2d * sinr * Math.sin(s) * Math.sin(s));
+            const Myy = sind * cosr * sin2s - sin2d * sinr * Math.cos(s) * Math.cos(s);
+            const Mzz = sin2d * sinr;
+            const Mxy = sind * cosr * cos2s + 0.5 * sin2d * sinr * sin2s;
+            const Mxz = -(cosd * cosr * Math.sin(s) + cos2d * sinr * Math.cos(s));
+            const Myz = cosd * cosr * Math.cos(s) - cos2d * sinr * Math.sin(s);
+
+            return [
+                [Mxx, Mxy, Mxz],
+                [Mxy, Myy, Myz],
+                [Mxz, Myz, Mzz]
+            ];
+        }
+
+        function formatTensor(mt) {
+            const fmt = (v) => (v >= 0 ? ' ' : '') + v.toFixed(3);
+            return `[ ${fmt(mt[0][0])}  ${fmt(mt[0][1])}  ${fmt(mt[0][2])} ]\n` +
+                   `[ ${fmt(mt[1][0])}  ${fmt(mt[1][1])}  ${fmt(mt[1][2])} ]\n` +
+                   `[ ${fmt(mt[2][0])}  ${fmt(mt[2][1])}  ${fmt(mt[2][2])} ]`;
+        }
+
+        // Draw beachball using equal-area (Lambert) projection
+        function drawBeachball(axes) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const cx = width / 2;
+            const cy = height / 2;
+            const radius = Math.min(width, height) / 2 - 30;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const s = state.strike * DTOR;
+            const d = state.dip * DTOR;
+            const r = state.rake * DTOR;
+
+            // Normal and slip vectors
+            const n = [
+                Math.sin(d) * Math.cos(s),
+                -Math.sin(d) * Math.sin(s),
+                Math.cos(d)
+            ];
+            const sl = [
+                Math.cos(r) * Math.sin(s) - Math.cos(d) * Math.sin(r) * Math.cos(s),
+                Math.cos(r) * Math.cos(s) + Math.cos(d) * Math.sin(r) * Math.sin(s),
+                Math.sin(d) * Math.sin(r)
+            ];
+
+            // Grid-based rendering
+            const gridSize = 200;
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+
+            for (let py = 0; py < height; py++) {
+                for (let px = 0; px < width; px++) {
+                    const x = (px - cx) / radius;
+                    const y = -(py - cy) / radius;  // flip y for screen coords
+                    const r2 = x * x + y * y;
+
+                    if (r2 > 1) continue;
+
+                    // Equal-area (Lambert) projection inverse
+                    // x = sqrt(2) * cos(phi) * sin(theta/2)
+                    // y = sqrt(2) * sin(phi) * sin(theta/2)
+                    // where theta = colatitude from down, phi = azimuth from N
+                    const rho = Math.sqrt(r2);
+                    if (rho > 0.999) continue;
+
+                    const theta = 2 * Math.asin(rho / Math.sqrt(2));
+                    const phi = Math.atan2(x, y);  // azimuth from N (y-axis in plot)
+
+                    // Direction vector in Aki-Richards (x=N, y=E, z=Down)
+                    // Lower hemisphere: z > 0 (pointing down)
+                    const dir = [
+                        Math.sin(theta) * Math.cos(phi),  // N
+                        Math.sin(theta) * Math.sin(phi),  // E
+                        Math.cos(theta)                   // Down (always positive for lower hemisphere)
+                    ];
+
+                    // Radiation pattern: sign of (dir . n)(dir . d)
+                    const dn = dir[0] * n[0] + dir[1] * n[1] + dir[2] * n[2];
+                    const dd = dir[0] * sl[0] + dir[1] * sl[1] + dir[2] * sl[2];
+                    const amplitude = dn * dd;
+
+                    const idx = (py * width + px) * 4;
+                    if (amplitude > 0) {
+                        // Compressional - dark
+                        data[idx] = 30;
+                        data[idx + 1] = 30;
+                        data[idx + 2] = 30;
+                    } else {
+                        // Dilatational - light
+                        data[idx] = 245;
+                        data[idx + 1] = 245;
+                        data[idx + 2] = 245;
+                    }
+                    data[idx + 3] = 255;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            // Draw circle outline
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw nodal plane great circles
+            drawGreatCircle(state.strike, state.dip, '#1e293b', 2, false);
+
+            // Auxiliary plane
+            const aux = calculateAuxiliaryPlane(state.strike, state.dip, state.rake);
+            drawGreatCircle(aux.strike, aux.dip, '#1e293b', 2, true);
+
+            // Draw P/T/B axes
+            drawAxis(axes.pTrend, axes.pPlunge, '#ef4444', 'P');
+            drawAxis(axes.tTrend, axes.tPlunge, '#3b82f6', 'T');
+            drawAxis(axes.bTrend, axes.bPlunge, '#22c55e', 'B');
+
+            // Compass labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('N', cx, cy - radius - 8);
+            ctx.fillText('S', cx, cy + radius + 14);
+            ctx.fillText('E', cx + radius + 12, cy + 4);
+            ctx.fillText('W', cx - radius - 12, cy + 4);
+        }
+
+        function drawGreatCircle(strike, dip, color, lineWidth, dashed) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const cx = width / 2;
+            const cy = height / 2;
+            const radius = Math.min(width, height) / 2 - 30;
+
+            const s = strike * DTOR;
+            const d = dip * DTOR;
+
+            // Strike direction and dip direction in Aki-Richards
+            const strikeDir = [Math.sin(s), Math.cos(s), 0];
+            const dipDir = [-Math.cos(d) * Math.cos(s), Math.cos(d) * Math.sin(s), -Math.sin(d)];
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            if (dashed) ctx.setLineDash([5, 5]);
+            else ctx.setLineDash([]);
+
+            let started = false;
+            for (let i = 0; i <= 180; i++) {
+                const angle = i * DTOR * 2;
+                // Point on the plane
+                const pt = [
+                    strikeDir[0] * Math.cos(angle) + dipDir[0] * Math.sin(angle),
+                    strikeDir[1] * Math.cos(angle) + dipDir[1] * Math.sin(angle),
+                    strikeDir[2] * Math.cos(angle) + dipDir[2] * Math.sin(angle)
+                ];
+
+                // Only plot lower hemisphere (z > 0)
+                if (pt[2] < 0) {
+                    started = false;
+                    continue;
+                }
+
+                // Equal-area projection
+                const theta = Math.acos(pt[2]);
+                const phi = Math.atan2(pt[1], pt[0]);
+                const rho = Math.sqrt(2) * Math.sin(theta / 2);
+                const px = cx + rho * Math.sin(phi) * radius;
+                const py = cy - rho * Math.cos(phi) * radius;
+
+                if (!started) {
+                    ctx.moveTo(px, py);
+                    started = true;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawAxis(trend, plunge, color, label) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const cx = width / 2;
+            const cy = height / 2;
+            const radius = Math.min(width, height) / 2 - 30;
+
+            const t = trend * DTOR;
+            const p = plunge * DTOR;
+
+            // Direction in Aki-Richards (x=N, y=E, z=Down)
+            const dir = [
+                Math.cos(p) * Math.cos(t),  // N
+                Math.cos(p) * Math.sin(t),  // E
+                Math.sin(p)                 // Down
+            ];
+
+            // Only plot if in lower hemisphere
+            if (dir[2] < 0) return;
+
+            // Equal-area projection
+            const theta = Math.acos(dir[2]);
+            const phi = Math.atan2(dir[1], dir[0]);
+            const rho = Math.sqrt(2) * Math.sin(theta / 2);
+            const px = cx + rho * Math.sin(phi) * radius;
+            const py = cy - rho * Math.cos(phi) * radius;
+
+            // Draw marker
+            ctx.beginPath();
+            ctx.arc(px, py, 8, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, px, py);
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
